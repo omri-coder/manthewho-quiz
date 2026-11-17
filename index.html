@@ -283,7 +283,7 @@ const CQ={contact:1,b:"איך נחזור אליכם?",t:"השאירו פרטים
   {id:"c_mail",type:"input",ph:"דואר אלקטרוני",itype:"email",ltr:1,ac:"email"}]};
 const STEPS=[...Q,CQ];
 /* Where completed questionnaires are sent (a Google Apps Script / Zapier / Make webhook URL). Empty = nothing is sent. Does not work inside claude.ai, only on our own hosting. */
-const ENDPOINT="";
+const ENDPOINT="https://script.google.com/macros/s/AKfycbyTogHJTY7B9VN32dh2RQCJ8dhdd-mYCm2MO-Kz1GxCvhaNNI4mGrJ9RkxW5_uXhWX6/exec";
 
 /* ── state ── */
 const st={step:-1,a:{},view:null,open:0};
