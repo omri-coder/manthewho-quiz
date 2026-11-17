@@ -281,7 +281,8 @@ const CQ={contact:1,b:"איך נחזור אליכם?",t:"השאירו פרטים
   {id:"c_name",type:"input",ph:"שם מלא",ac:"name"},
   {id:"c_phone",type:"input",ph:"טלפון",itype:"tel",ltr:1,ac:"tel"},
   {id:"c_mail",type:"input",ph:"דואר אלקטרוני",itype:"email",ltr:1,ac:"email"}]};
-const STEPS=[...Q,CQ];
+/* Contact details are collected on the result page, after the visitor has seen their direction. */
+const STEPS=Q;
 /* Where completed questionnaires are sent (a Google Apps Script / Zapier / Make webhook URL). Empty = nothing is sent. Does not work inside claude.ai, only on our own hosting. */
 const ENDPOINT="https://script.google.com/macros/s/AKfycbyTogHJTY7B9VN32dh2RQCJ8dhdd-mYCm2MO-Kz1GxCvhaNNI4mGrJ9RkxW5_uXhWX6/exec";
 
@@ -373,13 +374,22 @@ function render(focus){
         <p class="strong">נראה שתידרש ${INTAKE[lvl]}.</p>
         <p class="fine">ההערכה היא ראשונית בלבד. משך הקליטה ועלותה ייקבעו לאחר היכרות, בחינת התקציב והמסמכים וסיכום היקף העבודה.</p></div>
       <div class="cta"><button class="pill solid" data-act="other" data-k="${other}">לקריאה על ${TRACKS[other].name}</button>
-        <a class="pill solid" href="${waLink(key)}" target="_blank" rel="noopener">פנייה לפגישת היכרות</a></div>
+        ${ENDPOINT?"":`<a class="pill solid" href="${waLink(key)}" target="_blank" rel="noopener">פנייה לפגישת היכרות</a>`}</div>
+      ${ENDPOINT?leadHTML():""}
       <p class="fine">היקף השירותים וההתקשרות נקבעים בהסכם. אין התחייבות לקבלת היוזמה או להשגת מימון.</p>
       <div class="contact"><span>אפשר גם ישירות:</span><span dir="ltr">${CONTACT.phone}</span><span dir="ltr">${CONTACT.email}</span><button class="link" data-act="restart">למלא את השאלון מחדש</button></div>
     </section>`;
   }
   el.innerHTML=h;
   if(focus){ const f=document.getElementById("qh"); if(f) f.focus({preventScroll:true}); window.scrollTo({top:0,behavior:"auto"}); }
+}
+function leadHTML(){
+  if(st.sent) return `<div class="intake" id="lead" role="status"><h2>תודה, הפרטים נשלחו</h2><p>נחזור אליכם בהקדם לתיאום פגישת היכרות.</p></div>`;
+  return `<form class="intake" id="lead" novalidate><h2>פנייה לפגישת היכרות</h2>
+    <p>רוצים להמשיך? השאירו פרטים ונחזור אליכם. יחד עם הפרטים יישלחו אלינו גם התשובות שמילאתם בשאלון.</p>
+    <div class="fields narrow">${CQ.parts.map(p=>partHTML(CQ,p)).join("")}</div>
+    <div class="next-row"><button type="submit" class="pill ghost" id="send"${hasContact()?"":" disabled"}>שליחה ${arrow}</button>
+      <span class="hint">נדרשים שם וטלפון או דואר אלקטרוני.</span></div></form>`;
 }
 function waLink(key){
   const a=st.a, L=["שלום, מילאנו את שאלון היוזמות ונשמח לפגישת היכרות."];
@@ -407,7 +417,7 @@ stage.addEventListener("click",e=>{
   const act=b.dataset.act;
   if(act==="start") st.step=0;
   else if(act==="back") st.step=Math.max(-1,st.step-1);
-  else if(act==="next"){ if(!canNext(STEPS[st.step])) return; if(st.step===STEPS.length-1) submitLead(); st.step++; }
+  else if(act==="next"){ if(!canNext(STEPS[st.step])) return; st.step++; }
   else if(act==="result"){ st.step=STEPS.length+1; st.view=null; st.open=0; }
   else if(act==="other"){ st.view=b.dataset.k; st.open=0; }
   else if(act==="restart"){ st.step=-1; st.a={}; st.view=null; st.sent=false; }
@@ -424,9 +434,14 @@ stage.addEventListener("change",e=>{
   document.getElementById("next").disabled=!canNext(q);
 });
 stage.addEventListener("input",e=>{
-  const q=STEPS[st.step], k=e.target.dataset.p; if(!q||!k||e.target.closest("fieldset")) return;
+  const q=STEPS[st.step], k=e.target.dataset.p; if(!k||e.target.closest("fieldset")) return;
   st.a[k]=e.target.value;
-  document.getElementById("next").disabled=!canNext(q);
+  const send=document.getElementById("send"); if(send) send.disabled=!hasContact();
+  if(q) document.getElementById("next").disabled=!canNext(q);
+});
+stage.addEventListener("submit",e=>{
+  e.preventDefault(); if(e.target.id!=="lead"||!hasContact()) return;
+  submitLead(); e.target.outerHTML=leadHTML();
 });
 stage.addEventListener("keydown",e=>{
   if(e.key==="Enter"&&e.target.tagName==="INPUT"&&e.target.type!=="checkbox"&&e.target.type!=="radio"){ const n=document.getElementById("next"); if(n&&!n.disabled) n.click(); }
