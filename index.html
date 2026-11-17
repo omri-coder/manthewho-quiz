@@ -394,7 +394,7 @@ function waLink(key){
 }
 function submitLead(){
   if(!ENDPOINT||st.sent) return; st.sent=true;
-  const a=st.a, r=score(a), row={time:new Date().toISOString(),contact_name:a.c_name||"",contact_phone:a.c_phone||"",contact_email:a.c_mail||"",track:TRACKS[r.first].name,intake:INTAKE[intake(a)]};
+  const a=st.a, r=score(a), row={time:new Date().toLocaleString("sv-SE",{timeZone:"Asia/Jerusalem"}),contact_name:a.c_name||"",contact_phone:a.c_phone||"",contact_email:a.c_mail||"",track:TRACKS[r.first].name,intake:INTAKE[intake(a)]};
   PARTS.forEach(p=>{ row[p.id]=isSel(p)?(a[p.id]||[]).map(i=>optText(p.o[i]).replace(/\u200e/g,"")).join(", "):(a[p.id]||"").trim(); });
   try{ fetch(ENDPOINT,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(row)}).catch(()=>{st.sent=false;}); }catch(e){ st.sent=false; }
 }
